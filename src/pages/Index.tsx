@@ -156,9 +156,8 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="grid md:grid-cols-[320px_1fr] gap-5">
-        <div className="hidden md:block">{prefsPanel}</div>
-
+      <main>
+        {/* Preferences panel available via header button */}
         <section className="space-y-4">
           <h2 className="sr-only">Search</h2>
           <p className="text-sm text-muted-foreground">Single-title search. We’ll show one match; if unavailable, we’ll suggest similar titles on your services.</p>
