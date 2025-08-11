@@ -11,6 +11,11 @@ export interface TitleResult {
   available: boolean;
   services?: ServiceHit[];
   alternatives?: Array<{ title: string; services: ServiceHit[] }>;
+  otherFlatrate?: ServiceHit[];
+  rent?: ServiceHit[];
+  buy?: ServiceHit[];
+  free?: ServiceHit[];
+  ads?: ServiceHit[];
   genres?: string[];
   updatedAt?: string;
 }
@@ -69,26 +74,99 @@ export default function ResultCard({ data }: { data: TitleResult }) {
           </div>
         )}
 
-        {!data.available && data.alternatives && (
-          <div className="space-y-3">
-            <p className="text-sm">Not available on your subscriptions. Try these:</p>
-            <div className="space-y-2">
-              {data.alternatives.slice(0, 3).map((alt, idx) => (
-                <div key={alt.title + idx} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{alt.title}</p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {alt.services.map(s => (
-                        <ServiceBadge key={s.id + s.quality} id={s.id} quality={s.quality} />
+        {!data.available && (
+          <div className="space-y-6">
+            {data.alternatives && (
+              <div className="space-y-3">
+                <p className="text-sm">Not available on your subscriptions. Try these:</p>
+                <div className="space-y-2">
+                  {data.alternatives.slice(0, 3).map((alt, idx) => (
+                    <div key={alt.title + idx} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{alt.title}</p>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {alt.services.map(s => (
+                            <ServiceBadge key={s.id + s.quality} id={s.id} quality={s.quality} />
+                          ))}
+                        </div>
+                      </div>
+                      <Button asChild size="sm">
+                        <a href={alt.services[0].url} target="_blank" rel="noopener noreferrer">Watch this →</a>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(data.otherFlatrate || data.rent || data.buy || data.free || data.ads) && (
+              <div className="space-y-4">
+                {data.otherFlatrate && data.otherFlatrate.length > 0 && (
+                  <div>
+                    <p className="text-sm">Available with other subscriptions:</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {data.otherFlatrate.map(s => (
+                        <a key={s.id + s.quality + 'of'} href={s.url} target="_blank" rel="noopener noreferrer">
+                          <ServiceBadge id={s.id} quality={s.quality} />
+                        </a>
                       ))}
                     </div>
                   </div>
-                  <Button asChild size="sm">
-                    <a href={alt.services[0].url} target="_blank" rel="noopener noreferrer">Watch this →</a>
-                  </Button>
-                </div>
-              ))}
-            </div>
+                )}
+
+                {data.rent && data.rent.length > 0 && (
+                  <div>
+                    <p className="text-sm">Rent from:</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {data.rent.map(s => (
+                        <a key={s.id + s.quality + 'rent'} href={s.url} target="_blank" rel="noopener noreferrer">
+                          <ServiceBadge id={s.id} quality={s.quality} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {data.buy && data.buy.length > 0 && (
+                  <div>
+                    <p className="text-sm">Buy from:</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {data.buy.map(s => (
+                        <a key={s.id + s.quality + 'buy'} href={s.url} target="_blank" rel="noopener noreferrer">
+                          <ServiceBadge id={s.id} quality={s.quality} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {data.free && data.free.length > 0 && (
+                  <div>
+                    <p className="text-sm">Watch free on:</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {data.free.map(s => (
+                        <a key={s.id + s.quality + 'free'} href={s.url} target="_blank" rel="noopener noreferrer">
+                          <ServiceBadge id={s.id} quality={s.quality} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {data.ads && data.ads.length > 0 && (
+                  <div>
+                    <p className="text-sm">Free (with ads) on:</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {data.ads.map(s => (
+                        <a key={s.id + s.quality + 'ads'} href={s.url} target="_blank" rel="noopener noreferrer">
+                          <ServiceBadge id={s.id} quality={s.quality} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

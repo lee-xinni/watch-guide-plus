@@ -87,6 +87,17 @@ export async function searchTitle(query: string, region: string, selected: Searc
     } as const;
   }
 
+  // When not available on selected subscriptions, compute other options
+  const otherFlatrate = Array.from(new Set(offers.filter(s => !selected.has(s)))).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
+  const rentList: any[] = regionData?.rent ?? [];
+  const buyList: any[] = regionData?.buy ?? [];
+  const freeList: any[] = regionData?.free ?? [];
+  const adsList: any[] = regionData?.ads ?? [];
+
+  const rent = Array.from(new Set(rentList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
+  const buy = Array.from(new Set(buyList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
+  const free = Array.from(new Set(freeList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
+  const ads = Array.from(new Set(adsList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
   // Build alternatives from next few results with matching providers
   const alternatives: Array<{ title: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
   for (const cand of results.slice(1, 8)) {
@@ -117,6 +128,11 @@ export async function searchTitle(query: string, region: string, selected: Searc
     year,
     available: false,
     alternatives,
+    ...(otherFlatrate.length ? { otherFlatrate } : {}),
+    ...(rent.length ? { rent } : {}),
+    ...(buy.length ? { buy } : {}),
+    ...(free.length ? { free } : {}),
+    ...(ads.length ? { ads } : {}),
     genres: undefined,
     updatedAt: "just now",
   } as const;
