@@ -7,7 +7,7 @@ import SearchBar from "@/components/wtw/SearchBar";
 import ResultCard, { TitleResult } from "@/components/wtw/ResultCard";
 import { ServiceId } from "@/components/wtw/services";
 import { useToast } from "@/hooks/use-toast";
-
+import { searchTitle } from "@/components/wtw/tmdb";
 const PREF_KEY = "wtw_prefs_v1";
 
 const Index = () => {
@@ -23,7 +23,7 @@ const Index = () => {
   });
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<TitleResult | null>(null);
-
+  const [tmdbToken, setTmdbToken] = useState<string>("");
   useEffect(() => {
     const raw = localStorage.getItem(PREF_KEY);
     if (raw) {
@@ -31,18 +31,20 @@ const Index = () => {
         const data = JSON.parse(raw);
         if (data.region) setRegion(data.region);
         if (data.subscriptions) setSubscriptions(data.subscriptions);
+        if (data.tmdbToken) setTmdbToken(data.tmdbToken);
       } catch {}
     }
   }, []);
 
   const savePrefs = () => {
-    localStorage.setItem(PREF_KEY, JSON.stringify({ region, subscriptions }));
+    localStorage.setItem(PREF_KEY, JSON.stringify({ region, subscriptions, tmdbToken }));
     toast({ title: "Preferences saved" });
   };
 
   const clearPrefs = () => {
     setRegion("US");
     setSubscriptions({ netflix: false, prime: false, disney: false, hulu: false, appletv: false, max: false });
+    setTmdbToken("");
     localStorage.removeItem(PREF_KEY);
     toast({ title: "Preferences cleared" });
   };
@@ -51,8 +53,8 @@ const Index = () => {
     setSubscriptions((prev) => ({ ...prev, [id]: value }));
   };
 
-  const runSearch = () => {
-    const q = query.trim().toLowerCase();
+  const runSearch = async () => {
+    const q = query.trim();
     if (!q) return;
 
     const selected = new Set<ServiceId>(
@@ -61,62 +63,20 @@ const Index = () => {
         .map(([id]) => id as ServiceId)
     );
 
-    const filterAlts = (
-      alts: { title: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }[]
-    ) =>
-      alts
-        .map((a) => ({ ...a, services: a.services.filter((s) => selected.has(s.id)) }))
-        .filter((a) => a.services.length > 0);
+    if (!tmdbToken) {
+      toast({ title: "Add TMDB token", description: "Open Preferences and paste your TMDB v4 Read token to enable real results." });
+      return;
+    }
 
-    // Demo logic: "inception" is available; others show alternatives
-    if (q.includes("inception")) {
-      const allServices = [
-        { id: "netflix" as ServiceId, quality: "HD" as const, url: "https://www.netflix.com/title/70131314" },
-        { id: "max" as ServiceId, quality: "4K" as const, url: "https://www.max.com" },
-      ];
+    toast({ title: "Searching TMDB…", description: "Fetching availability and suggestions" });
 
-      const filteredServices = allServices.filter((s) => selected.has(s.id));
-
-      if (filteredServices.length > 0) {
-        setResult({
-          title: "Inception",
-          type: "Movie",
-          year: 2010,
-          available: true,
-          services: filteredServices,
-          genres: ["Sci‑Fi", "Thriller"],
-          updatedAt: "2 days ago",
-        });
-      } else {
-        setResult({
-          title: "Inception",
-          type: "Movie",
-          year: 2010,
-          available: false,
-          alternatives: filterAlts([
-            { title: "Interstellar", services: [{ id: "prime" as ServiceId, quality: "4K" as const, url: "https://www.primevideo.com" }] },
-            { title: "Tenet", services: [{ id: "max" as ServiceId, quality: "HD" as const, url: "https://www.max.com" }] },
-          ]),
-          genres: ["Sci‑Fi", "Thriller"],
-          updatedAt: "2 days ago",
-        });
-      }
-    } else {
-      const alts = [
-        { title: "Interstellar", services: [{ id: "prime" as ServiceId, quality: "4K" as const, url: "https://www.primevideo.com" }] },
-        { title: "Tenet", services: [{ id: "max" as ServiceId, quality: "HD" as const, url: "https://www.max.com" }] },
-      ];
-
-      const filteredAlternatives = filterAlts(alts);
-
-      setResult({
-        title: query,
-        type: "Movie",
-        available: false,
-        alternatives: filteredAlternatives,
-        genres: ["Action", "Drama"],
-        updatedAt: "just now",
-      });
+    try {
+      const res = await searchTitle(q, region, selected, tmdbToken);
+      setResult(res as TitleResult);
+      toast({ title: "Done", description: res.available ? "Found availability" : "Showing alternatives" });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Search failed", description: err?.message ?? "Unexpected error" });
     }
   };
 
@@ -124,8 +84,10 @@ const Index = () => {
     <PreferencesPanel
       region={region}
       subscriptions={subscriptions}
+      tmdbToken={tmdbToken}
       onRegionChange={setRegion}
       onToggle={onToggle}
+      onTokenChange={setTmdbToken}
       onSave={savePrefs}
       onClear={clearPrefs}
     />

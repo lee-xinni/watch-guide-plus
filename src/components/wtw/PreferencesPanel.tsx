@@ -3,13 +3,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { REGIONS, SERVICES, ServiceId } from "./services";
 
 interface PreferencesPanelProps {
   region: string;
   subscriptions: Record<ServiceId, boolean>;
+  tmdbToken: string;
   onRegionChange: (code: string) => void;
   onToggle: (id: ServiceId, value: boolean) => void;
+  onTokenChange: (token: string) => void;
   onSave: () => void;
   onClear: () => void;
 }
@@ -17,8 +20,10 @@ interface PreferencesPanelProps {
 export default function PreferencesPanel({
   region,
   subscriptions,
+  tmdbToken,
   onRegionChange,
   onToggle,
+  onTokenChange,
   onSave,
   onClear,
 }: PreferencesPanelProps) {
@@ -46,6 +51,19 @@ export default function PreferencesPanel({
             ))}
           </SelectContent>
         </Select>
+      </section>
+
+      <section className="space-y-2">
+        <Label htmlFor="tmdb-token">TMDB API token (v4 Read)</Label>
+        <Input
+          id="tmdb-token"
+          type="password"
+          value={tmdbToken}
+          onChange={(e) => onTokenChange(e.target.value)}
+          placeholder="Paste your TMDB v4 Read token"
+          aria-label="TMDB API token"
+        />
+        <p className="text-xs text-muted-foreground">Stored locally in this browser. Used to fetch real availability data from TMDB.</p>
       </section>
 
       <section className="space-y-2">
