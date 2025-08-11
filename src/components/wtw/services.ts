@@ -19,7 +19,7 @@ export const SERVICES: ServiceDef[] = [
   { id: "disney", name: "Disney+", colorVar: "--brand-disney", logoText: "D+" },
   { id: "hulu", name: "Hulu", colorVar: "--brand-hulu", logoText: "H" },
   { id: "appletv", name: "Apple TV+", colorVar: "--brand-appletv", logoText: "TV" },
-  { id: "max", name: "Max", colorVar: "--brand-max", logoText: "M" },
+  { id: "max", name: "HBO MAX", colorVar: "--brand-max", logoText: "M" },
 ];
 
 export const REGIONS = [
