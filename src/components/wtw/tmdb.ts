@@ -72,7 +72,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   const flat: any[] = regionData?.flatrate ?? [];
   const offers = flat.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
 
-  const matched = offers.filter(s => selected.has(s));
+  const matched = Array.from(new Set(offers.filter(s => selected.has(s))));
   const services = matched.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] }));
 
   if (services.length > 0) {
@@ -97,7 +97,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
       const rd = p?.results?.[region] ?? null;
       const fr: any[] = rd?.flatrate ?? [];
       const off = fr.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
-      const m = off.filter(s => selected.has(s));
+      const m = Array.from(new Set(off.filter(s => selected.has(s))));
       if (m.length > 0) {
         const altTitle: string = candIsMovie ? (cand.title || cand.original_title) : (cand.name || cand.original_name);
         alternatives.push({
