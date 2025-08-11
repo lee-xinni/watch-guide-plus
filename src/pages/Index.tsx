@@ -14,9 +14,9 @@ const Index = () => {
   const { toast } = useToast();
   const [region, setRegion] = useState<string>("US");
   const [subscriptions, setSubscriptions] = useState<Record<ServiceId, boolean>>({
-    netflix: true,
+    netflix: false,
     prime: false,
-    disney: true,
+    disney: false,
     hulu: false,
     appletv: false,
     max: false,
@@ -55,29 +55,65 @@ const Index = () => {
     const q = query.trim().toLowerCase();
     if (!q) return;
 
+    const selected = new Set<ServiceId>(
+      Object.entries(subscriptions)
+        .filter(([, v]) => v)
+        .map(([id]) => id as ServiceId)
+    );
+
+    const filterAlts = (
+      alts: { title: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }[]
+    ) =>
+      alts
+        .map((a) => ({ ...a, services: a.services.filter((s) => selected.has(s.id)) }))
+        .filter((a) => a.services.length > 0);
+
     // Demo logic: "inception" is available; others show alternatives
     if (q.includes("inception")) {
-      setResult({
-        title: "Inception",
-        type: "Movie",
-        year: 2010,
-        available: true,
-        services: [
-          { id: "netflix", quality: "HD", url: "https://www.netflix.com/title/70131314" },
-          { id: "max", quality: "4K", url: "https://www.max.com" },
-        ],
-        genres: ["Sci‑Fi", "Thriller"],
-        updatedAt: "2 days ago",
-      });
+      const allServices = [
+        { id: "netflix" as ServiceId, quality: "HD" as const, url: "https://www.netflix.com/title/70131314" },
+        { id: "max" as ServiceId, quality: "4K" as const, url: "https://www.max.com" },
+      ];
+
+      const filteredServices = allServices.filter((s) => selected.has(s.id));
+
+      if (filteredServices.length > 0) {
+        setResult({
+          title: "Inception",
+          type: "Movie",
+          year: 2010,
+          available: true,
+          services: filteredServices,
+          genres: ["Sci‑Fi", "Thriller"],
+          updatedAt: "2 days ago",
+        });
+      } else {
+        setResult({
+          title: "Inception",
+          type: "Movie",
+          year: 2010,
+          available: false,
+          alternatives: filterAlts([
+            { title: "Interstellar", services: [{ id: "prime" as ServiceId, quality: "4K" as const, url: "https://www.primevideo.com" }] },
+            { title: "Tenet", services: [{ id: "max" as ServiceId, quality: "HD" as const, url: "https://www.max.com" }] },
+          ]),
+          genres: ["Sci‑Fi", "Thriller"],
+          updatedAt: "2 days ago",
+        });
+      }
     } else {
+      const alts = [
+        { title: "Interstellar", services: [{ id: "prime" as ServiceId, quality: "4K" as const, url: "https://www.primevideo.com" }] },
+        { title: "Tenet", services: [{ id: "max" as ServiceId, quality: "HD" as const, url: "https://www.max.com" }] },
+      ];
+
+      const filteredAlternatives = filterAlts(alts);
+
       setResult({
         title: query,
         type: "Movie",
         available: false,
-        alternatives: [
-          { title: "Interstellar", services: [{ id: "prime", quality: "4K", url: "https://www.primevideo.com" }] },
-          { title: "Tenet", services: [{ id: "max", quality: "HD", url: "https://www.max.com" }] },
-        ],
+        alternatives: filteredAlternatives,
         genres: ["Action", "Drama"],
         updatedAt: "just now",
       });
