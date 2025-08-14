@@ -99,7 +99,13 @@ const Index = () => {
       <div className="container py-8 max-w-4xl">
         <header className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-primary elevated shadow-glow" aria-hidden />
+            <div className="h-12 w-12 rounded-2xl bg-gradient-primary elevated shadow-glow flex items-center justify-center" aria-hidden>
+              <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity="0.2"/>
+                <path d="M10 8l6 4-6 4V8z" fill="currentColor"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor" fillOpacity="0.3"/>
+              </svg>
+            </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Where To Watch</h1>
               <p className="text-sm text-muted-foreground/80">Find your next binge-worthy content</p>
