@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings } from "lucide-react";
+import { Settings, Heart } from "lucide-react";
 import PreferencesPanel from "@/components/wtw/PreferencesPanel";
 import SearchBar from "@/components/wtw/SearchBar";
 import ResultCard, { TitleResult } from "@/components/wtw/ResultCard";
+import SavedDrawer from "@/components/wtw/SavedDrawer";
+import RecentSearches from "@/components/wtw/RecentSearches";
 import { ServiceId } from "@/components/wtw/services";
 import { useToast } from "@/hooks/use-toast";
 import { searchTitle } from "@/components/wtw/tmdb";
+import { getSaved, pushHistory, getHistory } from "@/utils/storage";
 const PREF_KEY = "wtw_prefs_v1";
 
 const Index = () => {
@@ -25,6 +28,9 @@ const Index = () => {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<TitleResult | null>(null);
   const [tmdbToken, setTmdbToken] = useState<string>("");
+  const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(() => getHistory());
+  const [savedCount, setSavedCount] = useState(() => getSaved().length);
   useEffect(() => {
     const raw = localStorage.getItem(PREF_KEY);
     if (raw) {
@@ -35,6 +41,25 @@ const Index = () => {
         if (data.tmdbToken) setTmdbToken(data.tmdbToken);
       } catch {}
     }
+  }, []);
+
+  // Listen for history changes to update recent searches
+  useEffect(() => {
+    const handleHistoryChange = () => {
+      setRecentSearches(getHistory());
+    };
+
+    const handleSavedChange = () => {
+      setSavedCount(getSaved().length);
+    };
+
+    window.addEventListener('wtw:history-cleared', handleHistoryChange);
+    window.addEventListener('storage', handleSavedChange);
+    
+    return () => {
+      window.removeEventListener('wtw:history-cleared', handleHistoryChange);
+      window.removeEventListener('storage', handleSavedChange);
+    };
   }, []);
 
   const savePrefs = () => {
@@ -52,6 +77,11 @@ const Index = () => {
 
   const onToggle = (id: ServiceId, value: boolean) => {
     setSubscriptions((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleRecentSearchSelect = (searchQuery: string) => {
+    setQuery(searchQuery);
+    setTimeout(() => runSearch(), 100); // Small delay to ensure query is set
   };
 
   const runSearch = async () => {
@@ -74,6 +104,13 @@ const Index = () => {
     try {
       const res = await searchTitle(q, region, selected, tmdbToken);
       setResult(res as TitleResult);
+      
+      if (res) {
+        // Add to search history
+        pushHistory(q, { id: res.id, type: res.type === "Movie" ? "movie" : "tv" });
+        setRecentSearches(getHistory());
+      }
+      
       toast({ title: "Done", description: res.available ? "Found availability" : "Showing alternatives" });
     } catch (err: any) {
       console.error(err);
@@ -113,6 +150,21 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="bg-muted/40 border-border/40 backdrop-blur-sm">TMDB • Beta</Badge>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setSavedDrawerOpen(true)}
+              className="gap-2 bg-card/60 border-border/50 hover:bg-card/80 transition-smooth"
+            >
+              <Heart className="h-4 w-4" />
+              Saved
+              {savedCount > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-primary/30">
+                  {savedCount}
+                </Badge>
+              )}
+            </Button>
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="gap-2 bg-card/60 border-border/50 hover:bg-card/80 transition-smooth">
@@ -139,7 +191,12 @@ const Index = () => {
               <p className="text-muted-foreground/80 max-w-lg mx-auto">Search any movie or TV show and we'll find where it's available on your subscriptions, or suggest similar content you can watch.</p>
             </div>
 
-            <SearchBar query={query} onChange={setQuery} onSearch={runSearch} />
+            <div className="space-y-6">
+              <SearchBar query={query} onChange={setQuery} onSearch={runSearch} />
+              
+              {/* Recent Searches */}
+              <RecentSearches onSearchSelect={handleRecentSearchSelect} />
+            </div>
           </section>
 
           {result && (
@@ -149,6 +206,16 @@ const Index = () => {
             </section>
           )}
         </main>
+
+        {/* Saved Drawer */}
+        <SavedDrawer 
+          open={savedDrawerOpen} 
+          onOpenChange={setSavedDrawerOpen}
+          onBrowseRecent={() => {
+            setSavedDrawerOpen(false);
+            // Focus on recent searches or scroll to them
+          }}
+        />
 
         {/* Structured data */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

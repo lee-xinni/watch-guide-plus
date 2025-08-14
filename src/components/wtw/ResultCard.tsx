@@ -1,10 +1,15 @@
+import { useState, useEffect } from "react";
+import { Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 import { SERVICES, ServiceId } from "./services";
+import { toggleSave, isSaved, type SavedItem } from "@/utils/storage";
 
 export type ServiceHit = { id: ServiceId; quality: "HD" | "4K"; url: string };
 export interface TitleResult {
+  id: number;
   title: string;
   type: "Movie" | "TV";
   year?: number;
@@ -36,9 +41,71 @@ function ServiceBadge({ id, quality }: { id: ServiceId; quality: "HD" | "4K" }) 
 }
 
 export default function ResultCard({ data }: { data: TitleResult }) {
+  const [saved, setSaved] = useState(() => isSaved(data.id, data.type === "Movie" ? "movie" : "tv"));
+  const [lastAction, setLastAction] = useState<{ action: 'save' | 'remove'; item: SavedItem } | null>(null);
+
+  useEffect(() => {
+    setSaved(isSaved(data.id, data.type === "Movie" ? "movie" : "tv"));
+  }, [data.id, data.type]);
+
+  const handleSaveToggle = () => {
+    const saveItem = {
+      id: data.id,
+      type: data.type === "Movie" ? "movie" as const : "tv" as const,
+      title: data.title,
+      year: data.year,
+      poster: data.posterUrl?.replace('https://image.tmdb.org/t/p/w500', ''),
+    };
+
+    const result = toggleSave(saveItem);
+    setSaved(result.saved);
+    setLastAction({ action: result.saved ? 'save' : 'remove', item: result.item });
+
+    toast({
+      title: result.saved ? "Added to Saved" : "Removed from Saved",
+      description: result.saved ? "Tap to undo" : "Tap to undo",
+      action: (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => {
+            // Undo the action
+            const undoResult = toggleSave(saveItem);
+            setSaved(undoResult.saved);
+            toast({
+              title: "Undone",
+              description: undoResult.saved ? "Added back to saved" : "Removed from saved",
+            });
+          }}
+        >
+          Undo
+        </Button>
+      ),
+    });
+  };
+
   const subTitle = `${data.type}${data.year ? ` • ${data.year}` : ""}`;
+  
   return (
-    <Card className="bg-gradient-card backdrop-blur-md border-border/40 shadow-card hover:shadow-elevated transition-smooth overflow-hidden">
+    <Card className="bg-gradient-card backdrop-blur-md border-border/40 shadow-card hover:shadow-elevated transition-smooth overflow-hidden relative group">
+      {/* Heart icon for saving - positioned absolutely */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSaveToggle}
+          className={`w-10 h-10 rounded-full transition-all duration-200 ${
+            saved 
+              ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20' 
+              : 'text-muted-foreground hover:text-red-500 bg-background/80 hover:bg-red-500/10'
+          } backdrop-blur-sm shadow-soft hover:shadow-glow hover:scale-110`}
+          aria-pressed={saved}
+          aria-label={saved ? "Remove from saved" : "Add to saved"}
+        >
+          <Heart className={`w-5 h-5 transition-all duration-200 ${saved ? 'fill-current scale-110' : ''}`} />
+        </Button>
+      </div>
+
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row items-start gap-4">
           {/* Poster Image */}
@@ -55,12 +122,33 @@ export default function ResultCard({ data }: { data: TitleResult }) {
           
           {/* Title and Info */}
           <div className="flex-1 space-y-4 min-w-0">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 pr-12 sm:pr-0">
               <div className="space-y-2 flex-1 min-w-0">
                 <CardTitle className="text-2xl leading-tight">{data.title}</CardTitle>
                 <CardDescription className="text-base">{subTitle}</CardDescription>
+                
+                {/* Heart icon on mobile - inline with title */}
+                <div className="flex items-center gap-3 sm:hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSaveToggle}
+                    className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                      saved 
+                        ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20' 
+                        : 'text-muted-foreground hover:text-red-500 bg-muted/40 hover:bg-red-500/10'
+                    } hover:scale-110`}
+                    aria-pressed={saved}
+                    aria-label={saved ? "Remove from saved" : "Add to saved"}
+                  >
+                    <Heart className={`w-4 h-4 transition-all duration-200 ${saved ? 'fill-current scale-110' : ''}`} />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {saved ? 'Saved' : 'Save for later'}
+                  </span>
+                </div>
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 hidden sm:block">
                 {data.available ? (
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
@@ -73,6 +161,21 @@ export default function ResultCard({ data }: { data: TitleResult }) {
                   </Badge>
                 )}
               </div>
+            </div>
+            
+            {/* Availability badge on mobile */}
+            <div className="sm:hidden">
+              {data.available ? (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                  Available
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-red-500/30 text-red-400 gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                  Not available
+                </Badge>
+              )}
             </div>
             
             {/* Genres */}

@@ -50,6 +50,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
 
   if (!primary) {
     return {
+      id: 0, // Fallback ID for no results
       title: query,
       type: "Movie" as const,
       available: false,
@@ -79,6 +80,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
 
   if (services.length > 0) {
     return {
+      id,
       title,
       type,
       year,
@@ -133,6 +135,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   }
 
   return {
+    id,
     title,
     type,
     year,
