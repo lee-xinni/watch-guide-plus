@@ -54,6 +54,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
       type: "Movie" as const,
       available: false,
       alternatives: [],
+      posterUrl: undefined,
       updatedAt: "just now",
     };
   }
@@ -66,6 +67,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
     const d = isMovie ? primary.release_date : primary.first_air_date;
     return d ? Number(String(d).slice(0, 4)) : undefined;
   })();
+  const posterUrl = primary.poster_path ? `https://image.tmdb.org/t/p/w500${primary.poster_path}` : undefined;
 
   const prov = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/watch/providers`, token);
   const regionData = prov?.results?.[region] ?? null;
@@ -82,6 +84,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
       year,
       available: true,
       services,
+      posterUrl,
       genres: undefined,
       updatedAt: "just now",
     } as const;
@@ -99,7 +102,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   const free = Array.from(new Set(freeList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
   const ads = Array.from(new Set(adsList.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[])).map(id => ({ id, quality: "HD" as const, url: PROVIDER_HOME[id] }));
   // Build alternatives from next few results with matching providers
-  const alternatives: Array<{ title: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
+  const alternatives: Array<{ title: string; year?: number; posterUrl?: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
   for (const cand of results.slice(1, 8)) {
     const candIsMovie = cand.media_type === "movie" || !!cand.title;
     const candId = cand.id;
@@ -111,8 +114,15 @@ export async function searchTitle(query: string, region: string, selected: Searc
       const m = Array.from(new Set(off.filter(s => selected.has(s))));
       if (m.length > 0) {
         const altTitle: string = candIsMovie ? (cand.title || cand.original_title) : (cand.name || cand.original_name);
+        const altYear = (() => {
+          const d = candIsMovie ? cand.release_date : cand.first_air_date;
+          return d ? Number(String(d).slice(0, 4)) : undefined;
+        })();
+        const altPosterUrl = cand.poster_path ? `https://image.tmdb.org/t/p/w300${cand.poster_path}` : undefined;
         alternatives.push({
           title: altTitle,
+          year: altYear,
+          posterUrl: altPosterUrl,
           services: m.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] })),
         });
       }
@@ -127,6 +137,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
     type,
     year,
     available: false,
+    posterUrl,
     alternatives,
     ...(otherFlatrate.length ? { otherFlatrate } : {}),
     ...(rent.length ? { rent } : {}),

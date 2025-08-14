@@ -9,8 +9,9 @@ export interface TitleResult {
   type: "Movie" | "TV";
   year?: number;
   available: boolean;
+  posterUrl?: string;
   services?: ServiceHit[];
-  alternatives?: Array<{ title: string; services: ServiceHit[] }>;
+  alternatives?: Array<{ title: string; year?: number; posterUrl?: string; services: ServiceHit[] }>;
   otherFlatrate?: ServiceHit[];
   rent?: ServiceHit[];
   buy?: ServiceHit[];
@@ -39,34 +40,53 @@ export default function ResultCard({ data }: { data: TitleResult }) {
   return (
     <Card className="bg-gradient-card backdrop-blur-md border-border/40 shadow-card hover:shadow-elevated transition-smooth overflow-hidden">
       <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2 flex-1">
-            <CardTitle className="text-2xl leading-tight">{data.title}</CardTitle>
-            <CardDescription className="text-base">{subTitle}</CardDescription>
-          </div>
-          <div className="flex-shrink-0">
-            {data.available ? (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                Available
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="border-red-500/30 text-red-400 gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                Not available
-              </Badge>
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          {/* Poster Image */}
+          {data.posterUrl && (
+            <div className="flex-shrink-0 w-full sm:w-32 lg:w-40">
+              <img
+                src={data.posterUrl}
+                alt={`${data.title} poster`}
+                className="w-full sm:w-32 lg:w-40 h-auto aspect-[2/3] object-cover rounded-lg shadow-soft hover:shadow-glow transition-smooth hover:scale-105"
+                loading="lazy"
+              />
+            </div>
+          )}
+          
+          {/* Title and Info */}
+          <div className="flex-1 space-y-4 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2 flex-1 min-w-0">
+                <CardTitle className="text-2xl leading-tight">{data.title}</CardTitle>
+                <CardDescription className="text-base">{subTitle}</CardDescription>
+              </div>
+              <div className="flex-shrink-0">
+                {data.available ? (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                    Available
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-red-500/30 text-red-400 gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                    Not available
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            {/* Genres */}
+            {data.genres && data.genres.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {data.genres.map((g) => (
+                  <Badge key={g} variant="secondary" className="bg-muted/40 border-border/30 text-muted-foreground hover:bg-muted/60 transition-smooth">{g}</Badge>
+                ))}
+              </div>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {data.genres && data.genres.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {data.genres.map((g) => (
-              <Badge key={g} variant="secondary" className="bg-muted/40 border-border/30 text-muted-foreground hover:bg-muted/60 transition-smooth">{g}</Badge>
-            ))}
-          </div>
-        )}
 
         {data.available && data.services && (
           <div className="space-y-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
@@ -98,15 +118,32 @@ export default function ResultCard({ data }: { data: TitleResult }) {
                 <div className="space-y-3">
                   {data.alternatives.slice(0, 3).map((alt, idx) => (
                     <div key={alt.title + idx} className="flex items-center gap-4 p-4 rounded-xl bg-card/40 border border-border/30 hover:bg-card/60 transition-smooth">
+                      {/* Alternative Poster */}
+                      {alt.posterUrl && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={alt.posterUrl}
+                            alt={`${alt.title} poster`}
+                            className="w-16 h-24 object-cover rounded-lg shadow-soft hover:shadow-glow transition-smooth hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      
                       <div className="flex-1 min-w-0 space-y-2">
-                        <p className="font-medium truncate">{alt.title}</p>
+                        <div className="space-y-1">
+                          <p className="font-medium truncate">{alt.title}</p>
+                          {alt.year && (
+                            <p className="text-sm text-muted-foreground">{alt.year}</p>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
                           {alt.services.map(s => (
                             <ServiceBadge key={s.id + s.quality} id={s.id} quality={s.quality} />
                           ))}
                         </div>
                       </div>
-                      <Button asChild size="sm" className="bg-gradient-primary hover:bg-gradient-button-hover text-white shadow-soft transition-bounce">
+                      <Button asChild size="sm" className="bg-gradient-primary hover:bg-gradient-button-hover text-white shadow-soft transition-bounce hover:scale-105">
                         <a href={alt.services[0].url} target="_blank" rel="noopener noreferrer">
                           Watch this →
                         </a>
@@ -126,68 +163,68 @@ export default function ResultCard({ data }: { data: TitleResult }) {
                 
                 <div className="grid gap-4">
                   {data.otherFlatrate && data.otherFlatrate.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">Other subscriptions:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.otherFlatrate.map(s => (
-                          <a key={s.id + s.quality + 'of'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
-                            <ServiceBadge id={s.id} quality={s.quality} />
-                          </a>
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Other subscriptions:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {data.otherFlatrate.map(s => (
+                            <a key={s.id + s.quality + 'of'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-smooth">
+                              <ServiceBadge id={s.id} quality={s.quality} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
                   )}
 
                   {data.rent && data.rent.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">💳 Rent from:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.rent.map(s => (
-                          <a key={s.id + s.quality + 'rent'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
-                            <ServiceBadge id={s.id} quality={s.quality} />
-                          </a>
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">💳 Rent from:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {data.rent.map(s => (
+                            <a key={s.id + s.quality + 'rent'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-smooth">
+                              <ServiceBadge id={s.id} quality={s.quality} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
                   )}
 
                   {data.buy && data.buy.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">🛒 Buy from:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.buy.map(s => (
-                          <a key={s.id + s.quality + 'buy'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
-                            <ServiceBadge id={s.id} quality={s.quality} />
-                          </a>
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">🛒 Buy from:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {data.buy.map(s => (
+                            <a key={s.id + s.quality + 'buy'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-smooth">
+                              <ServiceBadge id={s.id} quality={s.quality} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
                   )}
 
                   {data.free && data.free.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">🆓 Watch free:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.free.map(s => (
-                          <a key={s.id + s.quality + 'free'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
-                            <ServiceBadge id={s.id} quality={s.quality} />
-                          </a>
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">🆓 Watch free:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {data.free.map(s => (
+                            <a key={s.id + s.quality + 'free'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-smooth">
+                              <ServiceBadge id={s.id} quality={s.quality} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
                   )}
 
                   {data.ads && data.ads.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">📺 Free with ads:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.ads.map(s => (
-                          <a key={s.id + s.quality + 'ads'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
-                            <ServiceBadge id={s.id} quality={s.quality} />
-                          </a>
-                        ))}
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">📺 Free with ads:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {data.ads.map(s => (
+                            <a key={s.id + s.quality + 'ads'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-smooth">
+                              <ServiceBadge id={s.id} quality={s.quality} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
                   )}
                 </div>
               </div>
