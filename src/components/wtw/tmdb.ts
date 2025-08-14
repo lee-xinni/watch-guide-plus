@@ -137,7 +137,10 @@ export async function searchTitle(query: string, region: string, selected: Searc
   // Fetch similar titles when not available on user's subscriptions
   let similarTitles: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
   
-  if (selected.size > 0) {
+  // Only fetch similar titles if:
+  // 1. The original title is NOT available on user's subscriptions
+  // 2. User has selected subscriptions
+  if (selected.size > 0 && services.length === 0) {
     try {
       const similarResponse = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/similar`, token);
       const similarResults: any[] = Array.isArray(similarResponse?.results) ? similarResponse.results.slice(0, 8) : [];

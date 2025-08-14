@@ -211,7 +211,10 @@ export default function ResultCard({ data }: { data: TitleResult }) {
           </div>
             )}
 
-            {/* Similar titles on subscriptions */}
+
+        {!data.available && (
+          <div className="space-y-6">
+            {/* Similar titles on subscriptions - only when original is not available */}
             {data.similarTitles && data.similarTitles.length > 0 && (
               <div className="space-y-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <div className="flex items-center gap-2">
@@ -263,13 +266,19 @@ export default function ResultCard({ data }: { data: TitleResult }) {
               </div>
             )}
 
-        {!data.available && (
-          <div className="space-y-6">
-            {data.alternatives && (
-              <div className="space-y-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            {/* Show empty state if no similar titles found */}
+            {data.similarTitles && data.similarTitles.length === 0 && (
+              <div className="space-y-4 p-4 rounded-xl bg-muted/10 border border-border/30 text-center">
+                <p className="text-sm text-muted-foreground">No similar titles found on your subscriptions.</p>
+              </div>
+            )}
+
+            {/* Alternatives from search results */}
+            {data.alternatives && data.alternatives.length > 0 && (
+              <div className="space-y-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                  <p className="text-sm font-medium text-blue-400">Similar titles on your subscriptions</p>
+                  <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                  <p className="text-sm font-medium text-purple-400">Related titles on your subscriptions</p>
                 </div>
                 <div className="space-y-3">
                   {data.alternatives.slice(0, 3).map((alt, idx) => (
