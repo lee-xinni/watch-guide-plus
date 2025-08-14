@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { REGIONS, SERVICES, ServiceId } from "./services";
 
 interface PreferencesPanelProps {
@@ -33,16 +34,16 @@ export default function PreferencesPanel({
   );
 
   return (
-    <aside className="space-y-5">
-      <header className="space-y-1">
-        <h2 className="text-xl font-semibold">Your region & subscriptions</h2>
-        <p className="text-sm text-muted-foreground">Saved to this browser — no account required</p>
+    <aside className="space-y-6">
+      <header className="space-y-2">
+        <h2 className="text-xl font-bold">Your region & subscriptions</h2>
+        <p className="text-sm text-muted-foreground/80">Saved locally in this browser — no account required</p>
       </header>
 
-      <section className="space-y-2">
-        <Label htmlFor="region">Search region</Label>
+      <section className="space-y-3">
+        <Label htmlFor="region" className="font-medium">Search region</Label>
         <Select value={region} onValueChange={onRegionChange}>
-          <SelectTrigger id="region" aria-label="Select region">
+          <SelectTrigger id="region" aria-label="Select region" className="h-11 bg-card/60 border-border/40">
             <SelectValue placeholder="Select your country" />
           </SelectTrigger>
           <SelectContent>
@@ -53,8 +54,8 @@ export default function PreferencesPanel({
         </Select>
       </section>
 
-      <section className="space-y-2">
-        <Label htmlFor="tmdb-token">TMDB API token (v4 Read)</Label>
+      <section className="space-y-3">
+        <Label htmlFor="tmdb-token" className="font-medium">TMDB API token (v4 Read)</Label>
         <Input
           id="tmdb-token"
           type="password"
@@ -62,48 +63,59 @@ export default function PreferencesPanel({
           onChange={(e) => onTokenChange(e.target.value)}
           placeholder="Paste your TMDB v4 Read token"
           aria-label="TMDB API token"
+          className="h-11 bg-card/60 border-border/40"
         />
-        <p className="text-xs text-muted-foreground">Stored locally in this browser. Used to fetch real availability data from TMDB.</p>
+        <p className="text-xs text-muted-foreground/80">Stored locally in this browser. Used to fetch real availability data from TMDB.</p>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label>Streaming services</Label>
-          <span className="text-xs text-muted-foreground">{selectedCount} selected</span>
+          <Label className="font-medium">Streaming services</Label>
+          <Badge variant="outline" className="text-xs bg-card/40 border-border/40">
+            {selectedCount} selected
+          </Badge>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {SERVICES.map(svc => {
             const checked = subscriptions[svc.id];
             return (
               <label
                 key={svc.id}
-                className="flex items-center gap-2 rounded-lg border bg-card/60 px-3 py-2 cursor-pointer transition-colors hover:bg-accent/40"
+                className="flex items-center gap-3 rounded-xl border bg-card/40 px-4 py-3 cursor-pointer transition-smooth hover:bg-card/60 hover:border-border/60"
               >
                 <Checkbox
                   checked={checked}
                   onCheckedChange={(v) => onToggle(svc.id, Boolean(v))}
                   aria-label={`Toggle ${svc.name}`}
                 />
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-3 flex-1">
                   <span
-                    className="inline-flex items-center justify-center h-5 min-w-5 rounded-sm text-[10px] font-bold"
-                    style={{ backgroundColor: `hsl(var(${svc.colorVar}))`, color: "hsl(var(--chip-foreground))" }}
+                    className="inline-flex items-center justify-center h-6 min-w-6 rounded-lg text-xs font-bold transition-transform hover:scale-105"
+                    style={{ 
+                      backgroundColor: `hsl(var(${svc.colorVar}) / 0.2)`, 
+                      color: `hsl(var(${svc.colorVar}))`,
+                      border: `1px solid hsl(var(${svc.colorVar}) / 0.3)`
+                    }}
                     aria-hidden
                   >
                     {svc.logoText}
                   </span>
-                  <span className="text-sm">{svc.name}</span>
+                  <span className="text-sm font-medium">{svc.name}</span>
                 </span>
               </label>
             );
           })}
         </div>
-        <p className="text-xs text-muted-foreground">Toggle the services you subscribe to.</p>
+        <p className="text-xs text-muted-foreground/80">Select the streaming services you subscribe to for personalized results.</p>
       </section>
 
-      <div className="flex gap-3 pt-1">
-        <Button className="flex-1" onClick={onSave}>Save preferences</Button>
-        <Button variant="secondary" className="flex-1" onClick={onClear}>Clear</Button>
+      <div className="flex gap-3 pt-2">
+        <Button className="flex-1 bg-gradient-primary hover:bg-gradient-button-hover shadow-soft transition-bounce" onClick={onSave}>
+          Save preferences
+        </Button>
+        <Button variant="outline" className="flex-1 bg-card/40 border-border/40 hover:bg-card/60 transition-smooth" onClick={onClear}>
+          Clear all
+        </Button>
       </div>
     </aside>
   );

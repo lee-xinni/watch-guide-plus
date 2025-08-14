@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Settings } from "lucide-react";
 import PreferencesPanel from "@/components/wtw/PreferencesPanel";
 import SearchBar from "@/components/wtw/SearchBar";
 import ResultCard, { TitleResult } from "@/components/wtw/ResultCard";
@@ -94,55 +95,65 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen container py-5">
-      <header className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-primary elevated" aria-hidden />
-          <h1 className="text-2xl font-bold">Where To Watch</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-muted/60">Prototype • TMDB providers</Badge>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="secondary">Preferences</Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-11/12 sm:max-w-md">
-              <SheetHeader>
-                <SheetTitle>Your region & subscriptions</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4">
-                {prefsPanel}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-surface">
+      <div className="container py-8 max-w-4xl">
+        <header className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-primary elevated shadow-glow" aria-hidden />
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Where To Watch</h1>
+              <p className="text-sm text-muted-foreground/80">Find your next binge-worthy content</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="bg-muted/40 border-border/40 backdrop-blur-sm">TMDB • Beta</Badge>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="gap-2 bg-card/60 border-border/50 hover:bg-card/80 transition-smooth">
+                  <Settings className="h-4 w-4" />
+                  Preferences
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-11/12 sm:max-w-md">
+                <SheetHeader>
+                  <SheetTitle>Your region & subscriptions</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  {prefsPanel}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </header>
 
-      <main>
-        {/* Preferences panel available via header button */}
-        <section className="space-y-4">
-          <h2 className="sr-only">Search</h2>
-          <p className="text-sm text-muted-foreground">Single-title search. We’ll show one match; if unavailable, we’ll suggest similar titles on your services.</p>
+        <main className="space-y-8">
+          <section className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-semibold">Discover where to stream anything</h2>
+              <p className="text-muted-foreground/80 max-w-lg mx-auto">Search any movie or TV show and we'll find where it's available on your subscriptions, or suggest similar content you can watch.</p>
+            </div>
 
-          <SearchBar query={query} onChange={setQuery} onSearch={runSearch} />
+            <SearchBar query={query} onChange={setQuery} onSearch={runSearch} />
+          </section>
 
           {result && (
-            <div className="mt-2">
+            <section className="space-y-4">
+              <h3 className="text-lg font-semibold">Search Results</h3>
               <ResultCard data={result} />
-            </div>
+            </section>
           )}
-        </section>
-      </main>
+        </main>
 
-      {/* Structured data */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        name: "Where To Watch",
-        applicationCategory: "EntertainmentApplication",
-        description: "Find where to watch any movie or TV show across your streaming subscriptions and region.",
-        operatingSystem: "Web",
-      }) }} />
+        {/* Structured data */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Where To Watch",
+          applicationCategory: "EntertainmentApplication",
+          description: "Find where to watch any movie or TV show across your streaming subscriptions and region.",
+          operatingSystem: "Web",
+        }) }} />
+      </div>
     </div>
   );
 };

@@ -23,12 +23,13 @@ export interface TitleResult {
 function ServiceBadge({ id, quality }: { id: ServiceId; quality: "HD" | "4K" }) {
   const def = SERVICES.find(s => s.id === id)!;
   return (
-    <span className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium border" style={{
-      backgroundColor: `hsl(var(${def.colorVar}))`,
-      color: "hsl(var(--chip-foreground))",
-      borderColor: "hsl(var(--border))",
+    <span className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border transition-smooth hover:scale-105" style={{
+      backgroundColor: `hsl(var(${def.colorVar}) / 0.2)`,
+      color: `hsl(var(${def.colorVar}))`,
+      borderColor: `hsl(var(${def.colorVar}) / 0.3)`,
     }}>
-      {def.logoText} <span className="opacity-90">{quality}</span>
+      <span className="font-bold">{def.logoText}</span>
+      <span className="opacity-80 text-[10px] font-medium">{quality}</span>
     </span>
   );
 }
@@ -36,62 +37,79 @@ function ServiceBadge({ id, quality }: { id: ServiceId; quality: "HD" | "4K" }) 
 export default function ResultCard({ data }: { data: TitleResult }) {
   const subTitle = `${data.type}${data.year ? ` • ${data.year}` : ""}`;
   return (
-    <Card className="bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-border/60">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>{data.title}</span>
-          {data.available ? (
-            <span className="text-[hsl(var(--positive))] text-sm">✅ Available</span>
-          ) : (
-            <span className="text-[hsl(var(--negative))] text-sm">✖ Not available</span>
-          )}
-        </CardTitle>
-        <CardDescription>{subTitle}</CardDescription>
+    <Card className="bg-gradient-card backdrop-blur-md border-border/40 shadow-card hover:shadow-elevated transition-smooth overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <CardTitle className="text-2xl leading-tight">{data.title}</CardTitle>
+            <CardDescription className="text-base">{subTitle}</CardDescription>
+          </div>
+          <div className="flex-shrink-0">
+            {data.available ? (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                Available
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-red-500/30 text-red-400 gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                Not available
+              </Badge>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {data.genres && data.genres.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {data.genres.map((g) => (
-              <Badge key={g} variant="secondary" className="bg-muted/60">{g}</Badge>
+              <Badge key={g} variant="secondary" className="bg-muted/40 border-border/30 text-muted-foreground hover:bg-muted/60 transition-smooth">{g}</Badge>
             ))}
           </div>
         )}
 
         {data.available && data.services && (
-          <div className="space-y-3">
-            <p className="text-sm">Available on your subscriptions:</p>
+          <div className="space-y-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              <p className="text-sm font-medium text-green-400">Available on your subscriptions</p>
+            </div>
             <div className="flex flex-wrap gap-2">
               {data.services.map(s => (
                 <ServiceBadge key={s.id + s.quality} id={s.id} quality={s.quality} />
               ))}
             </div>
-            <div>
-              {/* Use the first service URL for demo */}
-              <Button asChild className="mt-1">
-                <a href={data.services[0].url} target="_blank" rel="noopener noreferrer">Watch now</a>
-              </Button>
-            </div>
+            <Button asChild className="w-full bg-gradient-primary hover:bg-gradient-button-hover shadow-soft hover:shadow-glow transition-bounce">
+              <a href={data.services[0].url} target="_blank" rel="noopener noreferrer">
+                🎬 Watch Now
+              </a>
+            </Button>
           </div>
         )}
 
         {!data.available && (
           <div className="space-y-6">
             {data.alternatives && (
-              <div className="space-y-3">
-                <p className="text-sm">Not available on your subscriptions. Try these:</p>
-                <div className="space-y-2">
+              <div className="space-y-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                  <p className="text-sm font-medium text-blue-400">Similar titles on your subscriptions</p>
+                </div>
+                <div className="space-y-3">
                   {data.alternatives.slice(0, 3).map((alt, idx) => (
-                    <div key={alt.title + idx} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{alt.title}</p>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
+                    <div key={alt.title + idx} className="flex items-center gap-4 p-4 rounded-xl bg-card/40 border border-border/30 hover:bg-card/60 transition-smooth">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <p className="font-medium truncate">{alt.title}</p>
+                        <div className="flex flex-wrap gap-1.5">
                           {alt.services.map(s => (
                             <ServiceBadge key={s.id + s.quality} id={s.id} quality={s.quality} />
                           ))}
                         </div>
                       </div>
-                      <Button asChild size="sm">
-                        <a href={alt.services[0].url} target="_blank" rel="noopener noreferrer">Watch this →</a>
+                      <Button asChild size="sm" className="bg-gradient-primary hover:bg-gradient-button-hover text-white shadow-soft transition-bounce">
+                        <a href={alt.services[0].url} target="_blank" rel="noopener noreferrer">
+                          Watch this →
+                        </a>
                       </Button>
                     </div>
                   ))}
@@ -100,77 +118,86 @@ export default function ResultCard({ data }: { data: TitleResult }) {
             )}
 
             {(data.otherFlatrate || data.rent || data.buy || data.free || data.ads) && (
-              <div className="space-y-4">
-                {data.otherFlatrate && data.otherFlatrate.length > 0 && (
-                  <div>
-                    <p className="text-sm">Available with other subscriptions:</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {data.otherFlatrate.map(s => (
-                        <a key={s.id + s.quality + 'of'} href={s.url} target="_blank" rel="noopener noreferrer">
-                          <ServiceBadge id={s.id} quality={s.quality} />
-                        </a>
-                      ))}
+              <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground"></div>
+                  <p className="text-sm font-medium">Other ways to watch</p>
+                </div>
+                
+                <div className="grid gap-4">
+                  {data.otherFlatrate && data.otherFlatrate.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Other subscriptions:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.otherFlatrate.map(s => (
+                          <a key={s.id + s.quality + 'of'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                            <ServiceBadge id={s.id} quality={s.quality} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {data.rent && data.rent.length > 0 && (
-                  <div>
-                    <p className="text-sm">Rent from:</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {data.rent.map(s => (
-                        <a key={s.id + s.quality + 'rent'} href={s.url} target="_blank" rel="noopener noreferrer">
-                          <ServiceBadge id={s.id} quality={s.quality} />
-                        </a>
-                      ))}
+                  {data.rent && data.rent.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">💳 Rent from:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.rent.map(s => (
+                          <a key={s.id + s.quality + 'rent'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                            <ServiceBadge id={s.id} quality={s.quality} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {data.buy && data.buy.length > 0 && (
-                  <div>
-                    <p className="text-sm">Buy from:</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {data.buy.map(s => (
-                        <a key={s.id + s.quality + 'buy'} href={s.url} target="_blank" rel="noopener noreferrer">
-                          <ServiceBadge id={s.id} quality={s.quality} />
-                        </a>
-                      ))}
+                  {data.buy && data.buy.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">🛒 Buy from:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.buy.map(s => (
+                          <a key={s.id + s.quality + 'buy'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                            <ServiceBadge id={s.id} quality={s.quality} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {data.free && data.free.length > 0 && (
-                  <div>
-                    <p className="text-sm">Watch free on:</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {data.free.map(s => (
-                        <a key={s.id + s.quality + 'free'} href={s.url} target="_blank" rel="noopener noreferrer">
-                          <ServiceBadge id={s.id} quality={s.quality} />
-                        </a>
-                      ))}
+                  {data.free && data.free.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">🆓 Watch free:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.free.map(s => (
+                          <a key={s.id + s.quality + 'free'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                            <ServiceBadge id={s.id} quality={s.quality} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {data.ads && data.ads.length > 0 && (
-                  <div>
-                    <p className="text-sm">Free (with ads) on:</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {data.ads.map(s => (
-                        <a key={s.id + s.quality + 'ads'} href={s.url} target="_blank" rel="noopener noreferrer">
-                          <ServiceBadge id={s.id} quality={s.quality} />
-                        </a>
-                      ))}
+                  {data.ads && data.ads.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">📺 Free with ads:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.ads.map(s => (
+                          <a key={s.id + s.quality + 'ads'} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                            <ServiceBadge id={s.id} quality={s.quality} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">Last updated {data.updatedAt ?? "just now"}</p>
+        <div className="pt-2 border-t border-border/30">
+          <p className="text-xs text-muted-foreground/60">Last updated {data.updatedAt ?? "just now"}</p>
+        </div>
       </CardContent>
     </Card>
   );
