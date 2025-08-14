@@ -64,11 +64,13 @@ export default function PreferencesPanel({
             type="password"
             value={tmdbToken}
             onChange={(e) => onTokenChange(e.target.value)}
-            placeholder="Paste your TMDB v4 Read token"
+            placeholder={tmdbToken ? "Custom token set" : "Using default token (leave empty)"}
             aria-label="TMDB API token"
             className="h-11 bg-card/60 border-border/40"
           />
-          <p className="text-xs text-muted-foreground/80">Stored locally in this browser. Used to fetch real availability data from TMDB.</p>
+          <p className="text-xs text-muted-foreground/80">
+            {tmdbToken ? "Using your custom token." : "Using built-in default token."} You can override with your own if needed.
+          </p>
         </section>
 
         <section className="space-y-4">

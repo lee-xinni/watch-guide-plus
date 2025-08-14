@@ -1,6 +1,7 @@
 import { ServiceId } from "./services";
 
 const API_BASE = "https://api.themoviedb.org/3";
+const DEFAULT_TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMjJhMGMxNjk5NzVlMjg3M2M5NDM1YmZkYmQzNDQ1YSIsIm5iZiI6MTc1NDkwNTM3NC4wMzgsInN1YiI6IjY4OTliYjFlODNlNGE4ZTNmYzVkMTQ0ZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.bc2j_sppyEO3Ia_RJP_ywi4NP2kAt6cizrUW6MuCryw";
 
 const PROVIDER_HOME: Record<ServiceId, string> = {
   netflix: "https://www.netflix.com/",
@@ -154,10 +155,10 @@ async function fetchRecommendations(
 }
 
 export async function searchTitle(query: string, region: string, selected: SearchSelected, token: string) {
-  if (!token) throw new Error("TMDB token missing");
+  const actualToken = token || DEFAULT_TMDB_TOKEN;
 
   const q = encodeURIComponent(query);
-  const search = await fetchJson(`/search/multi?query=${q}&include_adult=false`, token);
+  const search = await fetchJson(`/search/multi?query=${q}&include_adult=false`, actualToken);
   const results: any[] = Array.isArray(search?.results) ? search.results : [];
   const primary = results.find(r => r.media_type === "movie" || r.media_type === "tv") || results[0];
 
@@ -183,7 +184,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   })();
   const posterUrl = primary.poster_path ? `https://image.tmdb.org/t/p/w500${primary.poster_path}` : undefined;
 
-  const prov = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/watch/providers`, token);
+  const prov = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/watch/providers`, actualToken);
   const regionData = prov?.results?.[region] ?? null;
   const flat: any[] = regionData?.flatrate ?? [];
   const offers = flat.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
@@ -192,7 +193,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   const services = matched.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] }));
 
   if (services.length > 0) {
-    const recommendations = await fetchRecommendations(id, isMovie, title, region, selected, token);
+    const recommendations = await fetchRecommendations(id, isMovie, title, region, selected, actualToken);
     
     return {
       id,
@@ -225,7 +226,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
     const candIsMovie = cand.media_type === "movie" || !!cand.title;
     const candId = cand.id;
     try {
-      const p = await fetchJson(`/${candIsMovie ? "movie" : "tv"}/${candId}/watch/providers`, token);
+      const p = await fetchJson(`/${candIsMovie ? "movie" : "tv"}/${candId}/watch/providers`, actualToken);
       const rd = p?.results?.[region] ?? null;
       const fr: any[] = rd?.flatrate ?? [];
       const off = fr.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
@@ -251,7 +252,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
   }
 
   // Fetch recommendations (always show as "You might also like")
-  const recommendations = await fetchRecommendations(id, isMovie, title, region, selected, token);
+  const recommendations = await fetchRecommendations(id, isMovie, title, region, selected, actualToken);
 
   return {
     id,

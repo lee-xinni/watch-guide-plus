@@ -103,10 +103,7 @@ function Index() {
         .map(([id]) => id as ServiceId)
     );
 
-    if (!tmdbToken) {
-      toast({ title: "Add TMDB token", description: "Open Preferences and paste your TMDB v4 Read token to enable real results." });
-      return;
-    }
+    // Token is optional now since we have a default hardcoded token
 
     toast({ title: "Searching TMDB…", description: "Fetching availability and suggestions" });
 
