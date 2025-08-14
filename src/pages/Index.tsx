@@ -14,7 +14,7 @@ import { searchTitle } from "@/components/wtw/tmdb";
 import { getSaved, pushHistory, getHistory } from "@/utils/storage";
 const PREF_KEY = "wtw_prefs_v1";
 
-const Index = () => {
+function Index() {
   const { toast } = useToast();
   const [region, setRegion] = useState<string>("US");
   const [subscriptions, setSubscriptions] = useState<Record<ServiceId, boolean>>({
@@ -56,14 +56,23 @@ const Index = () => {
     window.addEventListener('wtw:history-cleared', handleHistoryChange);
     window.addEventListener('storage', handleSavedChange);
     
+    // Update saved count when storage changes
+    const updateSavedCount = () => {
+      setSavedCount(getSaved().length);
+    };
+    
+    window.addEventListener('storage', updateSavedCount);
+    window.addEventListener('wtw:saved-changed', updateSavedCount);
+    
     return () => {
-      window.removeEventListener('wtw:history-cleared', handleHistoryChange);
-      window.removeEventListener('storage', handleSavedChange);
+      window.removeEventListener('storage', updateSavedCount);
+      window.removeEventListener('wtw:saved-changed', updateSavedCount);
     };
   }, []);
 
   const savePrefs = () => {
-    localStorage.setItem(PREF_KEY, JSON.stringify({ region, subscriptions, tmdbToken }));
+    const prefs = { region, subscriptions, tmdbToken };
+    localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
     toast({ title: "Preferences saved" });
   };
 
@@ -229,6 +238,6 @@ const Index = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Index;

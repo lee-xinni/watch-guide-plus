@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Heart, MoreVertical, Download, Upload, Trash2, ExternalLink } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,26 @@ export default function SavedDrawer({ open, onOpenChange, onBrowseRecent }: Save
   const [savedItems, setSavedItems] = useState<SavedItem[]>(() => getSaved());
   const [itemToRemove, setItemToRemove] = useState<SavedItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Refresh saved items when drawer opens
+  useEffect(() => {
+    if (open) {
+      setSavedItems(getSaved());
+    }
+  }, [open]);
+
+  // Listen for storage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setSavedItems(getSaved());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const refreshSaved = () => {
     setSavedItems(getSaved());

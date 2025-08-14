@@ -47,12 +47,16 @@ export function toggleSave(item: Omit<SavedItem, "savedAt">): { saved: boolean; 
     const removedItem = saved[existingIndex];
     saved.splice(existingIndex, 1);
     setSaved(saved);
+    // Trigger custom event for UI updates
+    window.dispatchEvent(new CustomEvent('wtw:saved-changed'));
     return { saved: false, item: removedItem };
   } else {
     // Add
     const newItem: SavedItem = { ...item, savedAt: Date.now() };
     saved.unshift(newItem);
     setSaved(saved);
+    // Trigger custom event for UI updates
+    window.dispatchEvent(new CustomEvent('wtw:saved-changed'));
     return { saved: true, item: newItem };
   }
 }
@@ -69,6 +73,8 @@ export function removeSaved(id: number, type: "movie" | "tv"): SavedItem | null 
     const removed = saved[index];
     saved.splice(index, 1);
     setSaved(saved);
+    // Trigger custom event for UI updates
+    window.dispatchEvent(new CustomEvent('wtw:saved-changed'));
     return removed;
   }
   return null;

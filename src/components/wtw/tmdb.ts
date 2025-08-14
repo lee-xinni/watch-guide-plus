@@ -134,6 +134,53 @@ export async function searchTitle(query: string, region: string, selected: Searc
     }
   }
 
+  // Fetch similar titles when not available on user's subscriptions
+  let similarTitles: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
+  
+  if (selected.size > 0) {
+    try {
+      const similarResponse = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/similar`, token);
+      const similarResults: any[] = Array.isArray(similarResponse?.results) ? similarResponse.results.slice(0, 8) : [];
+      
+      for (const similar of similarResults) {
+        const similarIsMovie = isMovie; // Use same type as primary
+        const similarId = similar.id;
+        
+        try {
+          const similarProviders = await fetchJson(`/${similarIsMovie ? "movie" : "tv"}/${similarId}/watch/providers`, token);
+          const similarRegionData = similarProviders?.results?.[region] ?? null;
+          const similarFlat: any[] = similarRegionData?.flatrate ?? [];
+          const similarOffers = similarFlat.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
+          
+          const similarMatched = Array.from(new Set(similarOffers.filter(s => selected.has(s))));
+          
+          if (similarMatched.length > 0) {
+            const similarTitle: string = similarIsMovie ? (similar.title || similar.original_title) : (similar.name || similar.original_name);
+            const similarYear = (() => {
+              const d = similarIsMovie ? similar.release_date : similar.first_air_date;
+              return d ? Number(String(d).slice(0, 4)) : undefined;
+            })();
+            const similarPosterUrl = similar.poster_path ? `https://image.tmdb.org/t/p/w300${similar.poster_path}` : undefined;
+            
+            similarTitles.push({
+              id: similarId,
+              title: similarTitle,
+              year: similarYear,
+              posterUrl: similarPosterUrl,
+              services: similarMatched.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] })),
+            });
+          }
+          
+          if (similarTitles.length >= 6) break;
+        } catch {
+          // Ignore individual similar title errors
+        }
+      }
+    } catch {
+      // Ignore similar titles API errors
+    }
+  }
+
   return {
     id,
     title,
@@ -142,6 +189,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
     available: false,
     posterUrl,
     alternatives,
+    similarTitles: similarTitles,
     ...(otherFlatrate.length ? { otherFlatrate } : {}),
     ...(rent.length ? { rent } : {}),
     ...(buy.length ? { buy } : {}),
