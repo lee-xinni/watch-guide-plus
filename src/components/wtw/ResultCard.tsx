@@ -17,7 +17,7 @@ export interface TitleResult {
   posterUrl?: string;
   services?: ServiceHit[];
   alternatives?: Array<{ title: string; year?: number; posterUrl?: string; services: ServiceHit[] }>;
-  similarTitles?: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: ServiceHit[] }>;
+  recommendations?: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: ServiceHit[] }>;
   otherFlatrate?: ServiceHit[];
   rent?: ServiceHit[];
   buy?: ServiceHit[];
@@ -212,66 +212,60 @@ export default function ResultCard({ data }: { data: TitleResult }) {
             )}
 
 
+        {/* You might also like - Show recommendations for all titles */}
+        {data.recommendations && data.recommendations.length > 0 && (
+          <div className="space-y-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              <p className="text-sm font-medium text-green-400">You might also like</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {data.recommendations.map((rec, idx) => (
+                <div key={`${rec.id}-${idx}`} className="space-y-3">
+                  {/* Recommendation poster */}
+                  {rec.posterUrl && (
+                    <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-soft hover:shadow-glow transition-smooth hover:scale-105">
+                      <img
+                        src={rec.posterUrl}
+                        alt={`${rec.title} poster`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium line-clamp-2 leading-tight">{rec.title}</p>
+                      {rec.year && (
+                        <p className="text-xs text-muted-foreground">{rec.year}</p>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {rec.services.slice(0, 2).map(s => (
+                        <ServiceBadge key={s.id + s.quality + 'rec'} id={s.id} quality={s.quality} />
+                      ))}
+                    </div>
+                    
+                    <Button 
+                      asChild 
+                      size="sm" 
+                      className="w-full text-xs bg-gradient-primary hover:bg-gradient-button-hover text-white shadow-soft transition-bounce hover:scale-105"
+                    >
+                      <a href={rec.services[0].url} target="_blank" rel="noopener noreferrer">
+                        Watch this →
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!data.available && (
           <div className="space-y-6">
-            {/* Similar titles on subscriptions - only when original is not available */}
-            {data.similarTitles && data.similarTitles.length > 0 && (
-              <div className="space-y-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                  <p className="text-sm font-medium text-blue-400">Similar titles on your subscriptions</p>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {data.similarTitles.map((similar, idx) => (
-                    <div key={`${similar.id}-${idx}`} className="space-y-3">
-                      {/* Similar title poster */}
-                      {similar.posterUrl && (
-                        <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-soft hover:shadow-glow transition-smooth hover:scale-105">
-                          <img
-                            src={similar.posterUrl}
-                            alt={`${similar.title} poster`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="space-y-2">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium line-clamp-2 leading-tight">{similar.title}</p>
-                          {similar.year && (
-                            <p className="text-xs text-muted-foreground">{similar.year}</p>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-1">
-                          {similar.services.slice(0, 2).map(s => (
-                            <ServiceBadge key={s.id + s.quality + 'similar'} id={s.id} quality={s.quality} />
-                          ))}
-                        </div>
-                        
-                        <Button 
-                          asChild 
-                          size="sm" 
-                          className="w-full text-xs bg-gradient-primary hover:bg-gradient-button-hover text-white shadow-soft transition-bounce hover:scale-105"
-                        >
-                          <a href={similar.services[0].url} target="_blank" rel="noopener noreferrer">
-                            Watch this →
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Show empty state if no similar titles found */}
-            {data.similarTitles && data.similarTitles.length === 0 && (
-              <div className="space-y-4 p-4 rounded-xl bg-muted/10 border border-border/30 text-center">
-                <p className="text-sm text-muted-foreground">No similar titles found on your subscriptions.</p>
-              </div>
-            )}
 
             {/* Alternatives from search results */}
             {data.alternatives && data.alternatives.length > 0 && (

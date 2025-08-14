@@ -134,54 +134,69 @@ export async function searchTitle(query: string, region: string, selected: Searc
     }
   }
 
-  // Fetch similar titles when not available on user's subscriptions
-  let similarTitles: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
+  // Fetch recommendations (always show as "You might also like")
+  let recommendations: Array<{ id: number; title: string; year?: number; posterUrl?: string; services: { id: ServiceId; quality: "HD" | "4K"; url: string }[] }> = [];
   
-  // Only fetch similar titles if:
-  // 1. The original title is NOT available on user's subscriptions
-  // 2. User has selected subscriptions
-  if (selected.size > 0 && services.length === 0) {
-    try {
+  try {
+    // Try recommendations endpoint first (higher quality, curated by TMDB)
+    const recommendationsResponse = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/recommendations`, token);
+    let recommendationResults: any[] = Array.isArray(recommendationsResponse?.results) ? recommendationsResponse.results.slice(0, 8) : [];
+    
+    // If no recommendations, fallback to similar endpoint
+    if (recommendationResults.length === 0) {
       const similarResponse = await fetchJson(`/${isMovie ? "movie" : "tv"}/${id}/similar`, token);
-      const similarResults: any[] = Array.isArray(similarResponse?.results) ? similarResponse.results.slice(0, 8) : [];
+      recommendationResults = Array.isArray(similarResponse?.results) ? similarResponse.results.slice(0, 8) : [];
+    }
+    
+    for (const rec of recommendationResults) {
+      const recIsMovie = isMovie; // Use same type as primary
+      const recId = rec.id;
       
-      for (const similar of similarResults) {
-        const similarIsMovie = isMovie; // Use same type as primary
-        const similarId = similar.id;
+      try {
+        const recProviders = await fetchJson(`/${recIsMovie ? "movie" : "tv"}/${recId}/watch/providers`, token);
+        const recRegionData = recProviders?.results?.[region] ?? null;
+        const recFlat: any[] = recRegionData?.flatrate ?? [];
+        const recOffers = recFlat.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
         
-        try {
-          const similarProviders = await fetchJson(`/${similarIsMovie ? "movie" : "tv"}/${similarId}/watch/providers`, token);
-          const similarRegionData = similarProviders?.results?.[region] ?? null;
-          const similarFlat: any[] = similarRegionData?.flatrate ?? [];
-          const similarOffers = similarFlat.map(o => nameToServiceId(o?.provider_name)).filter(Boolean) as ServiceId[];
-          
-          const similarMatched = Array.from(new Set(similarOffers.filter(s => selected.has(s))));
-          
-          if (similarMatched.length > 0) {
-            const similarTitle: string = similarIsMovie ? (similar.title || similar.original_title) : (similar.name || similar.original_name);
-            const similarYear = (() => {
-              const d = similarIsMovie ? similar.release_date : similar.first_air_date;
-              return d ? Number(String(d).slice(0, 4)) : undefined;
-            })();
-            const similarPosterUrl = similar.poster_path ? `https://image.tmdb.org/t/p/w300${similar.poster_path}` : undefined;
-            
-            similarTitles.push({
-              id: similarId,
-              title: similarTitle,
-              year: similarYear,
-              posterUrl: similarPosterUrl,
-              services: similarMatched.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] })),
+        const recTitle: string = recIsMovie ? (rec.title || rec.original_title) : (rec.name || rec.original_name);
+        const recYear = (() => {
+          const d = recIsMovie ? rec.release_date : rec.first_air_date;
+          return d ? Number(String(d).slice(0, 4)) : undefined;
+        })();
+        const recPosterUrl = rec.poster_path ? `https://image.tmdb.org/t/p/w300${rec.poster_path}` : undefined;
+        
+        // If user has subscriptions selected, prioritize those
+        if (selected.size > 0) {
+          const recMatched = Array.from(new Set(recOffers.filter(s => selected.has(s))));
+          if (recMatched.length > 0) {
+            recommendations.push({
+              id: recId,
+              title: recTitle,
+              year: recYear,
+              posterUrl: recPosterUrl,
+              services: recMatched.map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] })),
             });
           }
-          
-          if (similarTitles.length >= 6) break;
-        } catch {
-          // Ignore individual similar title errors
+        } else {
+          // No subscriptions selected, show all recommendations with available services
+          if (recOffers.length > 0) {
+            recommendations.push({
+              id: recId,
+              title: recTitle,
+              year: recYear,
+              posterUrl: recPosterUrl,
+              services: recOffers.slice(0, 3).map(s => ({ id: s, quality: "HD" as const, url: PROVIDER_HOME[s] })),
+            });
+          }
         }
+        
+        if (recommendations.length >= 6) break;
+      } catch {
+        // Ignore individual recommendation errors
       }
-    } catch {
-      // Ignore similar titles API errors
     }
+  } catch {
+    // Ignore recommendations errors
   }
 
   return {
@@ -192,7 +207,7 @@ export async function searchTitle(query: string, region: string, selected: Searc
     available: false,
     posterUrl,
     alternatives,
-    similarTitles: similarTitles,
+    recommendations,
     ...(otherFlatrate.length ? { otherFlatrate } : {}),
     ...(rent.length ? { rent } : {}),
     ...(buy.length ? { buy } : {}),
